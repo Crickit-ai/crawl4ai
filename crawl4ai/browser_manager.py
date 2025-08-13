@@ -958,6 +958,12 @@ class BrowserManager:
 
         # Create and return the context with all settings
         context = await self.browser.new_context(**context_settings)
+        await context.route(
+            "**/*",
+            lambda route: route.abort()
+            if route.request.resource_type in {"stylesheet", "font", "image", "media"}
+            else route.continue_()
+        )
 
         # Apply text mode settings if enabled
         if self.config.text_mode:
