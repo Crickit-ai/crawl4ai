@@ -685,12 +685,18 @@ class AsyncPlaywrightCrawlerStrategy(AsyncCrawlerStrategy):
                 except Error as e:
                     # Allow navigation to be aborted when downloading files
                     # This is expected behavior for downloads in some browser engines
-                    if 'net::ERR_ABORTED' in str(e) and self.browser_config.accept_downloads:
-                        self.logger.info(
-                            message=f"Navigation aborted, likely due to file download: {url}",
-                            tag="GOTO",
-                            params={"url": url},
-                        )
+                    if 'net::ERR_ABORTED' in str(e):
+                        if self.browser_config.accept_downloads:
+                            self.logger.info(
+                                message=f"Navigation aborted, likely due to file download: {url}",
+                                tag="GOTO",
+                                params={"url": url},
+                            )
+                        else:
+                            self.logger.warning(
+                                message=f"Navigation aborted for {url}. This might be due to a script on the page or a network issue.",
+                                tag="GOTO"
+                            )
                         response = None
                     else:
                         raise RuntimeError(f"Failed on navigating ACS-GOTO:\n{str(e)}")

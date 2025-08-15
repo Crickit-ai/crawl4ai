@@ -176,10 +176,11 @@ class ManagedBrowser:
             self.user_data_dir = self.temp_dir
 
         # Get browser path and args based on OS and browser type
-        browser_path = await self._get_browser_path()
-        print(f"DEBUG: Browser executable path: {browser_path}")
+        # browser_path = self._get_browser_path()
         args = await self._get_browser_args()
-        print(f"DEBUG: Browser launch command: {' '.join(args)}")
+        
+        if self.browser_config.extra_args:
+            args.extend(self.browser_config.extra_args)
             
 
         # ── make sure no old Chromium instance is owning the same port/profile ──
@@ -217,7 +218,8 @@ class ManagedBrowser:
                         os.remove(fp)
         except Exception as _e:
             # non-fatal — we'll try to start anyway, but log what happened
-            print(f"DEBUG: pre-launch cleanup failed: {_e}")
+            self.logger.warning(f"pre-launch cleanup failed: {_e}", tag="BROWSER")            
+            
 
         # Start browser process
         try:
@@ -238,17 +240,13 @@ class ManagedBrowser:
                     preexec_fn=os.setpgrp  # Start in a new process group
                 )
                 
-            # Non-blocking read of stdout and stderr
-            async def log_stream(stream, stream_name):
-                while True:
-                    line = await asyncio.to_thread(stream.readline)
-                    if not line:
-                        break
-                    print(f"DEBUG: [{stream_name}] {line.decode().strip()}")
-
-            asyncio.create_task(log_stream(self.browser_process.stdout, "stdout"))
-            asyncio.create_task(log_stream(self.browser_process.stderr, "stderr"))
-
+            # If verbose is True print args used to run the process
+            if self.logger and self.browser_config.verbose:
+                self.logger.debug(
+                    f"Starting browser with args: {' '.join(args)}",
+                    tag="BROWSER"
+                )    
+                
             # We'll monitor for a short time to make sure it starts properly, but won't keep monitoring
             await asyncio.sleep(0.5)  # Give browser time to start
             await self._initial_startup_check()
@@ -660,6 +658,8 @@ class BrowserManager:
         if self.config.cdp_url or self.config.use_managed_browser:
             self.config.use_managed_browser = True
             cdp_url = await self.managed_browser.start() if not self.config.cdp_url else self.config.cdp_url
+            if self.logger:
+                self.logger.info(f"Connecting to managed browser at {cdp_url}", tag="BROWSER")
             self.browser = await self.playwright.chromium.connect_over_cdp(cdp_url)
             contexts = self.browser.contexts
             if contexts:
