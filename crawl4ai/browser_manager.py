@@ -176,11 +176,16 @@ class ManagedBrowser:
             self.user_data_dir = self.temp_dir
 
         # Get browser path and args based on OS and browser type
-        # browser_path = self._get_browser_path()
+        browser_path = await self._get_browser_path()
+        if self.logger:
+            self.logger.info(f"Using browser executable: {browser_path}", tag="BROWSER")
         args = await self._get_browser_args()
         
         if self.browser_config.extra_args:
             args.extend(self.browser_config.extra_args)
+        
+        if self.logger:
+            self.logger.info(f"Browser launch command: {' '.join(args)}", tag="BROWSER")
             
 
         # ── make sure no old Chromium instance is owning the same port/profile ──
@@ -246,7 +251,19 @@ class ManagedBrowser:
                     f"Starting browser with args: {' '.join(args)}",
                     tag="BROWSER"
                 )    
-                
+            
+            # Non-blocking read of stdout and stderr
+            async def log_stream(stream, stream_name):
+                while True:
+                    line = await asyncio.to_thread(stream.readline)
+                    if not line:
+                        break
+                    if self.logger:
+                        self.logger.info(f"[{stream_name}] {line.decode().strip()}", tag="BROWSER")
+
+            asyncio.create_task(log_stream(self.browser_process.stdout, "stdout"))
+            asyncio.create_task(log_stream(self.browser_process.stderr, "stderr"))
+
             # We'll monitor for a short time to make sure it starts properly, but won't keep monitoring
             await asyncio.sleep(0.5)  # Give browser time to start
             await self._initial_startup_check()
