@@ -414,7 +414,7 @@ class BrowserConfig:
         downloads_path: str = None,
         storage_state: Union[str, dict, None] = None,
         ignore_https_errors: bool = True,
-        java_script_enabled: bool = True,
+        java_script_enabled: bool = False,
         sleep_on_close: bool = False,
         verbose: bool = True,
         cookies: list = None,
@@ -432,7 +432,7 @@ class BrowserConfig:
         extra_args: list = None,
         debugging_port: int = 9222,
         host: str = "localhost",
-        enable_stealth: bool = False,
+        enable_stealth: bool = True,
     ):
         self.browser_type = browser_type
         self.headless = headless 
