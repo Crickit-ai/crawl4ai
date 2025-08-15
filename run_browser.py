@@ -44,7 +44,8 @@ async def main():
                     logger.info("Successfully connected to the browser.")
                     break # Success
                 except Exception as e:
-                    logger.warning(f"Failed to connect to browser, retrying in 2 seconds... ({i+1}/5)")
+                    logger.warning(f"Failed to connect to browser: {e}", tag="BROWSER")
+                    logger.warning(f"Retrying in 2 seconds... ({i+1}/5)")
                     await asyncio.sleep(2) # Wait 2 seconds before retrying
             
             if not browser:

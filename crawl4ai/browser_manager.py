@@ -177,15 +177,9 @@ class ManagedBrowser:
 
         # Get browser path and args based on OS and browser type
         browser_path = await self._get_browser_path()
-        if self.logger:
-            self.logger.info(f"Using browser executable: {browser_path}", tag="BROWSER")
+        print(f"DEBUG: Browser executable path: {browser_path}")
         args = await self._get_browser_args()
-        
-        if self.browser_config.extra_args:
-            args.extend(self.browser_config.extra_args)
-        
-        if self.logger:
-            self.logger.info(f"Browser launch command: {' '.join(args)}", tag="BROWSER")
+        print(f"DEBUG: Browser launch command: {' '.join(args)}")
             
 
         # ── make sure no old Chromium instance is owning the same port/profile ──
@@ -223,8 +217,7 @@ class ManagedBrowser:
                         os.remove(fp)
         except Exception as _e:
             # non-fatal — we'll try to start anyway, but log what happened
-            self.logger.warning(f"pre-launch cleanup failed: {_e}", tag="BROWSER")            
-            
+            print(f"DEBUG: pre-launch cleanup failed: {_e}")
 
         # Start browser process
         try:
@@ -245,21 +238,13 @@ class ManagedBrowser:
                     preexec_fn=os.setpgrp  # Start in a new process group
                 )
                 
-            # If verbose is True print args used to run the process
-            if self.logger and self.browser_config.verbose:
-                self.logger.debug(
-                    f"Starting browser with args: {' '.join(args)}",
-                    tag="BROWSER"
-                )    
-            
             # Non-blocking read of stdout and stderr
             async def log_stream(stream, stream_name):
                 while True:
                     line = await asyncio.to_thread(stream.readline)
                     if not line:
                         break
-                    if self.logger:
-                        self.logger.info(f"[{stream_name}] {line.decode().strip()}", tag="BROWSER")
+                    print(f"DEBUG: [{stream_name}] {line.decode().strip()}")
 
             asyncio.create_task(log_stream(self.browser_process.stdout, "stdout"))
             asyncio.create_task(log_stream(self.browser_process.stderr, "stderr"))
