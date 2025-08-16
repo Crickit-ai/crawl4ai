@@ -27,8 +27,8 @@ from .async_crawler_strategy import (
     AsyncCrawlerStrategy,
     AsyncPlaywrightCrawlerStrategy,
     AsyncCrawlResponse,
-    AsyncHTTPCrawlerStrategy,
 )
+from .async_crawler_strategy_legacy import AsyncHTTPCrawlerStrategy
 from .cache_context import CacheMode, CacheContext
 from .markdown_generation_strategy import (
     DefaultMarkdownGenerator,
